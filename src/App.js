@@ -1,12 +1,15 @@
-import './App.css';
-import { useState, useEffect, useRef } from 'react';
+import './styles/App.css';
+import { useState, useEffect, useRef, createContext } from 'react';
 import axios from 'axios';
 import linkParse from 'parse-link-header';
+import Repo from './component/Repo';
+
+export const RepoContext = createContext();
 
 function App() {
     let [repoPageData, setRepoPageData] = useState([]);
     let [linkData, setLinkData] = useState({});
-    let [url, setUrl] = useState('https://api.github.com/repositories');
+    let [url, setUrl] = useState(process.env.REACT_APP_BASE_URL);
     let [pageIndex, setPageIndex] = useState(1);
     let inputPageIndexRef = useRef(null);
 
@@ -32,11 +35,10 @@ function App() {
     const fetchData = async () => {
         const response = await axios.get(url, {
             headers: {
-                Authorization: 'token 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',
+                Authorization: process.env.REACT_APP_GITHUB_TOKEN,
             },
         });
         const linkHeader = response.headers.link;
-
         const newPageData = processRepoData(response.data);
         setRepoPageData(newPageData);
         console.log(repoPageData);
@@ -72,31 +74,28 @@ function App() {
 
     return (
         <div className="App">
-            <h1>Page Number: {pageIndex}</h1>
-            {pageIndex < repoPageData.length > 0 &&
-                repoPageData[pageIndex - 1].map((repo, i) => (
-                    <p key={i + 1}>
-                        No.{i + 1} {repo.name} ID:{repo.id}
-                    </p>
-                ))}
-            <button
-                onClick={() => {
-                    handleClick(1);
-                }}
-            >
-                next
-            </button>
-            <button
-                onClick={() => {
-                    handleClick(-1);
-                }}
-            >
-                prev
-            </button>
-            <div>
-                <input type="number" placeholder="go to page..." ref={inputPageIndexRef} />
-                <button onClick={handlePageIndexInput}>GO</button>
-            </div>
+            <RepoContext.Provider className="App" value={{ repoPageData, pageIndex }}>
+                <h1>Page Number: {pageIndex}</h1>
+                <Repo></Repo>
+                <button
+                    onClick={() => {
+                        handleClick(1);
+                    }}
+                >
+                    next
+                </button>
+                <button
+                    onClick={() => {
+                        handleClick(-1);
+                    }}
+                >
+                    prev
+                </button>
+                <div>
+                    <input type="number" placeholder="go to page..." ref={inputPageIndexRef} />
+                    <button onClick={handlePageIndexInput}>GO</button>
+                </div>
+            </RepoContext.Provider>
         </div>
     );
 }
