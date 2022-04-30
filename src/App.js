@@ -1,102 +1,117 @@
-import './styles/App.css';
+import './App.css';
 import { useState, useEffect, useRef, createContext } from 'react';
 import axios from 'axios';
 import linkParse from 'parse-link-header';
-import Repo from './component/Repo';
+import Repo from './Repo';
 
-export const RepoContext = createContext();
+export const RepoContext = createContext(null);
 
 function App() {
-    let [repoPageData, setRepoPageData] = useState([]);
+    let [repoData, setRepoData] = useState([]);
     let [linkData, setLinkData] = useState({});
-    let [url, setUrl] = useState(process.env.REACT_APP_BASE_URL);
+    let [loading, setLoading] = useState(false);
+    let [url, setUrl] = useState('https://api.github.com/repositories');
     let [pageIndex, setPageIndex] = useState(1);
-    let inputPageIndexRef = useRef(null);
+    let inputIndex = useRef(null);
 
-    const processRepoData = newRepoData => {
-        let count = 0;
+    const processRepoData = responseData => {
+        const processedRepoData = [];
         let pageData = [];
-        let newRepoPageData = repoPageData;
-        newRepoData.forEach(repo => {
+        let count = 0;
+        responseData.forEach(repo => {
             count++;
             pageData.push(repo);
             if (count >= 10) {
-                newRepoPageData.push(pageData);
+                processedRepoData.push(pageData);
                 pageData = [];
                 count = 0;
             }
         });
-        if (pageData.length !== 0) {
-            newRepoPageData.push(pageData);
-        }
-        return newRepoPageData;
+        return processedRepoData;
     };
 
-    const fetchData = async () => {
-        const response = await axios.get(url, {
-            headers: {
-                Authorization: process.env.REACT_APP_GITHUB_TOKEN,
-            },
-        });
-        const linkHeader = response.headers.link;
-        const newPageData = processRepoData(response.data);
-        setRepoPageData(newPageData);
-        console.log(repoPageData);
-        setLinkData(linkParse(linkHeader));
-    };
-
-    const fetchMorePage = async pageIndex => {
-        while (typeof repoPageData[pageIndex] == 'undefined') {
-            console.log('fetchMore run');
+    const handleNextClick = () => {
+        setPageIndex(pageIndex + 1);
+        if (repoData[pageIndex] === undefined) {
+            console.log(linkData);
             setUrl(linkData.next.url);
-            await fetchData();
         }
     };
 
-    const handleClick = n => {
-        if (pageIndex > 1 || n !== -1) {
-            setPageIndex((pageIndex += n));
-            if (pageIndex >= repoPageData.length) {
-                fetchMorePage(pageIndex);
+    const handlePrevClick = () => {
+        if (pageIndex > 1) {
+            setPageIndex(pageIndex - 1);
+        }
+    };
+
+    const handleInputIndex = async () => {
+        const newPageIndex = parseInt(inputIndex.current.value);
+        if (newPageIndex > 0) {
+            setPageIndex(newPageIndex);
+            if (repoData[newPageIndex - 1] === undefined) {
+                setUrl(linkData.next.url);
             }
         }
     };
 
-    const handlePageIndexInput = () => {
-        const newPageIndex = parseInt(inputPageIndexRef.current.value);
-        setPageIndex(newPageIndex);
-        fetchMorePage(newPageIndex);
-    };
-
     useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            let fetchUrl = url;
+            let linkDataInLoop = {};
+            let processedRepoData = repoData;
+            let linkHeader = '';
+            while (processedRepoData[pageIndex - 1] === undefined) {
+                const response = await axios.get(fetchUrl, {
+                    headers: {
+                        Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
+                    },
+                });
+                linkHeader = response.headers.link;
+                linkDataInLoop = linkParse(linkHeader);
+                fetchUrl = linkDataInLoop.next.url;
+                const newData = processRepoData(response.data);
+                processedRepoData = processedRepoData.concat(newData);
+            }
+
+            setLinkData(linkParse(linkHeader));
+            setRepoData(processedRepoData);
+            setLoading(false);
+        };
         fetchData().then(() => console.log('Use effect is runned'));
-    }, []);
+    }, [url]);
 
     return (
-        <div className="App">
-            <RepoContext.Provider className="App" value={{ repoPageData, pageIndex }}>
-                <h1>Page Number: {pageIndex}</h1>
-                <Repo></Repo>
-                <button
-                    onClick={() => {
-                        handleClick(1);
-                    }}
-                >
-                    next
-                </button>
-                <button
-                    onClick={() => {
-                        handleClick(-1);
-                    }}
-                >
-                    prev
-                </button>
-                <div>
-                    <input type="number" placeholder="go to page..." ref={inputPageIndexRef} />
-                    <button onClick={handlePageIndexInput}>GO</button>
-                </div>
-            </RepoContext.Provider>
-        </div>
+        <RepoContext.Provider value={{ pageIndex, repoData }}>
+            <div className="App">
+                <h2 style={{ marginBottom: '3em' }}>
+                    {'Current Page :'.toUpperCase()} {pageIndex}
+                </h2>
+                {loading ? (
+                    <h1>LOADING...</h1>
+                ) : (
+                    <div>
+                        <Repo></Repo>
+
+                        <div className="button-group">
+                            <button onClick={handlePrevClick}>Prev</button>
+                            <button onClick={handleNextClick} style={{ marginLeft: '10px' }}>
+                                Next
+                            </button>
+                        </div>
+
+                        <div className="input-group">
+                            <input
+                                type="number"
+                                placeholder="go to page..."
+                                ref={inputIndex}
+                            ></input>
+                            <button onClick={handleInputIndex}>GO</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </RepoContext.Provider>
     );
 }
 

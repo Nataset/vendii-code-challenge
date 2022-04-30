@@ -1,0 +1,65 @@
+.App {
+  margin: 5em 20%;
+  text-align: center;
+}
+
+html {
+  background-color: #ffffff;
+}
+
+a {
+  text-decoration: none;
+  color: black;
+}
+
+button {
+  display: inline-block;
+  outline: none;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  padding: 2px 16px;
+  height: 38px;
+  min-width: 96px;
+  min-height: 38px;
+  border: none;
+  color: #fff;
+  background-color: rgb(88, 101, 242);
+  transition: background-color .17s ease,color .17s ease;
+
+}
+
+button:hover {
+  background-color: rgb(71, 82, 196);
+}
+
+.button-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.input-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+input {
+  width: 125px;
+  padding: 10px;
+  margin-right: 10px;
+}
+
+
+
+@media screen and (max-width: 700px) {
+  .App {
+    margin: 5em 20px; 
+  }
+}
