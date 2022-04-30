@@ -9,9 +9,9 @@ export default function Repo() {
         <div className="repo">
             {repoData[pageIndex - 1] &&
                 repoData[pageIndex - 1].map((repo, i) => (
-                    <a href={repo.html_url}>
+                    <a href={repo.html_url} key={repo.id}>
+                            
                         <div
-                            key={i + 1}
                             className={`repo__content ${i % 2 === 0 ? 'left' : 'right'}`}
                         >
                             <div className="repo__detail">

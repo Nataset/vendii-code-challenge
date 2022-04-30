@@ -62,11 +62,13 @@ function App() {
             let processedRepoData = repoData;
             let linkHeader = '';
             while (processedRepoData[pageIndex - 1] === undefined) {
-                const response = await axios.get(fetchUrl, {
-                    headers: {
-                        Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
-                    },
-                });
+                const response = await axios.get(fetchUrl, 
+                    // {
+                    // headers: {
+                    //     Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
+                    // },
+                    //  }
+                );
                 linkHeader = response.headers.link;
                 linkDataInLoop = linkParse(linkHeader);
                 fetchUrl = linkDataInLoop.next.url;
